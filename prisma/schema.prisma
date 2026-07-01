@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FitnessLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum DayType {
+  PUSH
+  PULL
+  LEGS
+  UPPER
+  LOWER
+  FULL_BODY
+  REST
+}
+
+enum PointsReason {
+  WORKOUT_FINISHED
+  WATER_GOAL
+  STREAK_DAY
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  name         String
+  username     String       @unique
+  avatarUrl    String?
+  fitnessLevel FitnessLevel @default(BEGINNER)
+  weightGoalKg Float?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  totalPoints  Int      @default(0)
+  weeklyPoints Int      @default(0)
+  weekAnchor   DateTime @default(now())
+
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+
+  workoutLogs  WorkoutLog[]
+  waterLogs    WaterLog[]
+  habitLogs    HabitLog[]
+  pointsLedger PointsLedger[]
+  badges       UserBadge[]
+
+  @@index([totalPoints])
+  @@index([weeklyPoints])
+}
+
+model MuscleGroup {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  exercises Exercise[]
+}
+
+model Exercise {
+  id            String      @id @default(cuid())
+  name          String
+  muscleGroupId String
+  muscleGroup   MuscleGroup @relation(fields: [muscleGroupId], references: [id])
+  equipment     String
+  dayType       DayType
+  defaultSets   Int
+  defaultReps   String
+  restSeconds   Int         @default(60)
+  instructions  String?
+
+  templateSlots TemplateSlot[] @relation("TemplateDefaultExercise")
+  workoutSlots  WorkoutSlot[]  @relation("ChosenExercise")
+
+  @@unique([name, dayType])
+  @@index([dayType])
+  @@index([muscleGroupId])
+}
+
+model WorkoutTemplate {
+  id           String         @id @default(cuid())
+  fitnessLevel FitnessLevel
+  dayOfWeek    Int
+  dayType      DayType
+  label        String
+  slots        TemplateSlot[]
+
+  @@unique([fitnessLevel, dayOfWeek])
+}
+
+model TemplateSlot {
+  id                String          @id @default(cuid())
+  templateId        String
+  template          WorkoutTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  order             Int
+  defaultExerciseId String
+  defaultExercise   Exercise        @relation("TemplateDefaultExercise", fields: [defaultExerciseId], references: [id])
+  sets              Int
+  reps              String
+  restSeconds       Int
+
+  @@unique([templateId, order])
+}
+
+model WorkoutLog {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime  @db.Date
+  dayType       DayType
+  templateId    String?
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  pointsAwarded Boolean   @default(false)
+
+  slots WorkoutSlot[]
+
+  @@unique([userId, date])
+  @@index([userId, finishedAt])
+}
+
+model WorkoutSlot {
+  id               String     @id @default(cuid())
+  workoutLogId     String
+  workoutLog       WorkoutLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  order            Int
+  chosenExerciseId String
+  chosenExercise   Exercise   @relation("ChosenExercise", fields: [chosenExerciseId], references: [id])
+  sets             Int
+  reps             String
+  restSeconds      Int
+  completed        Boolean    @default(false)
+  completedAt      DateTime?
+
+  @@unique([workoutLogId, order])
+}
+
+model WaterLog {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime  @db.Date
+  glasses        Int       @default(0)
+  goalHitAwarded Boolean   @default(false)
+  lastLoggedAt   DateTime?
+
+  @@unique([userId, date])
+}
+
+model HabitLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime @db.Date
+  stretch     Boolean  @default(false)
+  sleep8h     Boolean  @default(false)
+  proteinGoal Boolean  @default(false)
+
+  @@unique([userId, date])
+}
+
+model PointsLedger {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points    Int
+  reason    PointsReason
+  refId     String?
+  createdAt DateTime     @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  key         String      @unique
+  name        String
+  description String
+  icon        String
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId  String
+  badge    Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
