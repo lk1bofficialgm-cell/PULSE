@@ -33,6 +33,7 @@ async function main() {
         defaultReps: ex.reps,
         restSeconds: ex.rest,
         instructions: ex.instructions,
+        videoUrl: ex.videoUrl ?? null,
       },
       create: {
         name: ex.name,
@@ -43,6 +44,7 @@ async function main() {
         defaultReps: ex.reps,
         restSeconds: ex.rest,
         instructions: ex.instructions,
+        videoUrl: ex.videoUrl,
       },
     });
     exerciseIdByNameAndDayType.set(`${ex.name}::${ex.dayType}`, created.id);
@@ -83,6 +85,20 @@ async function main() {
             restSeconds: exerciseSeed.rest,
           },
         });
+      }
+    }
+  }
+
+  // Remove retired exercises (e.g. bodyweight moves cut from the catalog),
+  // skipping any that old workout logs still reference.
+  for (const name of ["Plank"]) {
+    const retired = await prisma.exercise.findMany({ where: { name } });
+    for (const ex of retired) {
+      const inUse =
+        (await prisma.workoutSlot.count({ where: { chosenExerciseId: ex.id } })) > 0 ||
+        (await prisma.templateSlot.count({ where: { defaultExerciseId: ex.id } })) > 0;
+      if (!inUse) {
+        await prisma.exercise.delete({ where: { id: ex.id } });
       }
     }
   }

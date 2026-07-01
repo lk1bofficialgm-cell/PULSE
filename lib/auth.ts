@@ -8,9 +8,9 @@ const PROTECTED_PREFIXES = [
   "/dashboard",
   "/workout",
   "/water",
-  "/leaderboard",
   "/progress",
   "/profile",
+  "/onboarding",
 ];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CalendarStrip, type WeekTemplateDay } from "@/components/workout/calendar-strip";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti";
+import { Moon } from "lucide-react";
+import { CalendarStrip, type WeekPlanDay } from "@/components/workout/calendar-strip";
+import { DayEditorSheet } from "@/components/workout/day-editor-sheet";
 import { ExerciseCard, type WorkoutSlotView } from "@/components/workout/exercise-card";
-import { SwapExerciseModal } from "@/components/workout/swap-exercise-modal";
-import { NeonCard } from "@/components/ui/neon-card";
-import { GlowButton } from "@/components/ui/glow-button";
+import { SwapExerciseSheet } from "@/components/workout/swap-exercise-modal";
+import { DemoSheet } from "@/components/workout/demo-sheet";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 
 interface WorkoutData {
@@ -15,19 +20,31 @@ interface WorkoutData {
     finishedAt: string | null;
     slots: WorkoutSlotView[];
   };
-  week: WeekTemplateDay[];
+  week: WeekPlanDay[];
   todayDayOfWeek: number;
 }
 
+const DAY_TITLES: Record<string, string> = {
+  PUSH: "Push Day",
+  PULL: "Pull Day",
+  LEGS: "Leg Day",
+  UPPER: "Upper Body",
+  LOWER: "Lower Body",
+  FULL_BODY: "Full Body",
+  REST: "Rest Day",
+};
+
 export default function WorkoutPage() {
+  const router = useRouter();
   const [data, setData] = useState<WorkoutData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [swapSlot, setSwapSlot] = useState<WorkoutSlotView | null>(null);
+  const [demoExercise, setDemoExercise] = useState<{ name: string; videoUrl: string | null } | null>(null);
+  const [editDay, setEditDay] = useState<WeekPlanDay | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [finishSummary, setFinishSummary] = useState<{ totalPoints: number; currentStreak: number } | null>(null);
-  const [celebrate, setCelebrate] = useState(false);
 
-  function load() {
+  const load = useCallback(() => {
     fetch("/api/workouts/today")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load");
@@ -35,9 +52,9 @@ export default function WorkoutPage() {
       })
       .then(setData)
       .catch(() => setError("Couldn't load today's workout. Check your connection."));
-  }
+  }, []);
 
-  useEffect(load, []);
+  useEffect(load, [load]);
 
   async function toggleComplete(slotId: string, completed: boolean) {
     if (!data) return;
@@ -72,6 +89,12 @@ export default function WorkoutPage() {
     });
   }
 
+  function handleWeekSaved(week: WeekPlanDay[]) {
+    setData((d) => (d ? { ...d, week } : d));
+    // Today's workout may have been rebuilt to match the new plan
+    load();
+  }
+
   async function finishWorkout() {
     if (!data) return;
     setFinishing(true);
@@ -81,9 +104,15 @@ export default function WorkoutPage() {
       if (!res.ok) throw new Error("Failed");
       const result = await res.json();
       setFinishSummary({ totalPoints: result.totalPoints, currentStreak: result.currentStreak });
-      setCelebrate(true);
       setData({ ...data, workout: { ...data.workout, finishedAt: result.workout.finishedAt } });
-      setTimeout(() => setCelebrate(false), 900);
+      confetti({
+        particleCount: 90,
+        spread: 75,
+        origin: { y: 0.7 },
+        colors: ["#ffffff", "#bbbbbb", "#777777"],
+      });
+      // Refresh server components so the header streak updates immediately
+      router.refresh();
     } catch {
       setError("Couldn't finish the workout. Check your connection and try again.");
     } finally {
@@ -92,58 +121,120 @@ export default function WorkoutPage() {
   }
 
   if (error && !data) {
-    return <p className="text-center text-sm text-red-400">{error}</p>;
+    return <p className="py-12 text-center text-sm text-red-400">{error}</p>;
   }
   if (!data) {
-    return <p className="text-center text-sm text-pulse-muted">Loading today&apos;s workout…</p>;
+    return (
+      <div className="flex flex-col gap-3 py-2">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-3xl bg-surface" />
+        ))}
+      </div>
+    );
   }
 
   const isRestDay = data.workout.dayType === "REST";
   const isFinished = !!data.workout.finishedAt;
+  const doneCount = data.workout.slots.filter((s) => s.completed).length;
+  const total = data.workout.slots.length;
 
   return (
     <div className="flex flex-col gap-5">
       <Toast message={error ?? ""} visible={!!error} onDismiss={() => setError(null)} variant="error" />
 
-      <CalendarStrip week={data.week} todayDayOfWeek={data.todayDayOfWeek} />
+      <CalendarStrip week={data.week} todayDayOfWeek={data.todayDayOfWeek} onEditDay={setEditDay} />
 
       {isRestDay ? (
-        <NeonCard glow="purple" className="text-center">
-          <p className="text-lg font-bold text-white">Rest Day 🌙</p>
-          <p className="mt-1 text-sm text-pulse-muted">Recovery is part of the plan. Stay hydrated and stretch.</p>
-        </NeonCard>
+        <Card className="flex flex-col items-center gap-2 py-10 text-center">
+          <Moon size={28} className="text-muted" />
+          <p className="text-lg font-bold text-white">Rest Day</p>
+          <p className="max-w-[26ch] text-sm text-muted">
+            Recovery is where muscle is built. Hydrate, stretch, sleep well.
+          </p>
+          <button
+            onClick={() => setEditDay(data.week.find((d) => d.dayOfWeek === data.todayDayOfWeek) ?? null)}
+            className="mt-2 text-sm font-semibold text-white underline underline-offset-4"
+          >
+            Train today instead
+          </button>
+        </Card>
       ) : (
         <>
-          <div className="flex flex-col gap-3">
+          <div className="flex items-end justify-between px-1">
+            <div>
+              <h1 className="text-2xl font-black text-white">
+                {DAY_TITLES[data.workout.dayType] ?? data.workout.dayType}
+              </h1>
+              <p className="mt-0.5 text-sm text-muted">
+                {isFinished ? "Completed — nice work." : `${doneCount} of ${total} exercises done`}
+              </p>
+            </div>
+            <ProgressRing done={doneCount} total={total} />
+          </div>
+
+          <div className="stagger flex flex-col gap-3">
             {data.workout.slots.map((slot) => (
               <ExerciseCard
                 key={slot.id}
                 slot={slot}
                 onToggleComplete={toggleComplete}
                 onSwap={setSwapSlot}
+                onDemo={(s) => setDemoExercise({ name: s.chosenExercise.name, videoUrl: s.chosenExercise.videoUrl })}
                 disabled={isFinished}
               />
             ))}
           </div>
 
           {finishSummary ? (
-            <NeonCard glow="pink" className={celebrate ? "animate-glow-burst" : undefined}>
-              <p className="text-center text-lg font-bold text-white">Workout Complete! 🎉</p>
-              <p className="text-center text-sm text-pulse-muted">
-                +50 points · {finishSummary.currentStreak}-day streak · {finishSummary.totalPoints} total points
+            <Card className="animate-fade-in-up text-center">
+              <p className="text-lg font-black text-white">Workout complete</p>
+              <p className="mt-1 text-sm text-muted">
+                +50 points · {finishSummary.currentStreak}-day streak · {finishSummary.totalPoints} total
               </p>
-            </NeonCard>
+            </Card>
           ) : (
-            <GlowButton onClick={finishWorkout} disabled={finishing || isFinished} size="lg" className="w-full">
-              {isFinished ? "Workout Finished" : finishing ? "Finishing…" : "Finish Workout"}
-            </GlowButton>
+            <Button onClick={finishWorkout} disabled={finishing || isFinished} size="lg" className="w-full">
+              {isFinished ? "Workout finished" : finishing ? "Finishing…" : "Finish Workout"}
+            </Button>
           )}
         </>
       )}
 
-      {swapSlot && (
-        <SwapExerciseModal slot={swapSlot} onClose={() => setSwapSlot(null)} onSwapped={handleSwapped} />
-      )}
+      <DayEditorSheet day={editDay} onClose={() => setEditDay(null)} onSaved={handleWeekSaved} />
+      <SwapExerciseSheet
+        slot={swapSlot}
+        onClose={() => setSwapSlot(null)}
+        onSwapped={handleSwapped}
+        onDemo={setDemoExercise}
+      />
+      <DemoSheet exercise={demoExercise} onClose={() => setDemoExercise(null)} />
     </div>
+  );
+}
+
+function ProgressRing({ done, total }: { done: number; total: number }) {
+  const pct = total > 0 ? done / total : 0;
+  const r = 20;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-label={`${done} of ${total} done`}>
+      <circle cx="26" cy="26" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
+      <circle
+        cx="26"
+        cy="26"
+        r={r}
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - pct)}
+        transform="rotate(-90 26 26)"
+        style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.21,1.02,0.73,1)" }}
+      />
+      <text x="26" y="30" textAnchor="middle" className="fill-white text-[12px] font-bold">
+        {done}/{total}
+      </text>
+    </svg>
   );
 }

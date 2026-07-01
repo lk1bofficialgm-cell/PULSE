@@ -36,9 +36,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# user-uploaded content
-/public/uploads/avatars/*
-!/public/uploads/avatars/.gitkeep
 
 # typescript
 *.tsbuildinfo
