@@ -5,8 +5,8 @@ export const config = {
     "/dashboard/:path*",
     "/workout/:path*",
     "/water/:path*",
-    "/leaderboard/:path*",
     "/progress/:path*",
     "/profile/:path*",
+    "/onboarding/:path*",
   ],
 };

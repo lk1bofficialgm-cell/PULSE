@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Dumbbell, Droplets, Trophy, CalendarDays } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { GlowButton } from "@/components/ui/glow-button";
-import { NeonCard } from "@/components/ui/neon-card";
+import { Button } from "@/components/ui/button";
+
+const FEATURES = [
+  { Icon: CalendarDays, text: "A weekly plan built around you — every day editable" },
+  { Icon: Dumbbell, text: "Machine-focused workouts with video demos for every move" },
+  { Icon: Droplets, text: "Water tracking with your actual bottle" },
+  { Icon: Trophy, text: "Streaks, points, and a global leaderboard" },
+];
 
 export default async function Home() {
   const session = await auth();
@@ -10,33 +17,31 @@ export default async function Home() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md text-center">
-        <h1 className="mb-3 bg-gradient-to-r from-pulse-pink to-pulse-purple bg-clip-text text-5xl font-black tracking-tight text-transparent">
-          PULSE
-        </h1>
-        <p className="mb-8 text-pulse-muted">
-          Auto-generated workouts, water &amp; habit tracking, streaks, and a global leaderboard — all in one place.
-        </p>
+      <div className="stagger w-full max-w-sm text-center">
+        <h1 className="text-5xl font-black tracking-[0.3em] text-white">PULSE</h1>
+        <p className="mt-3 text-muted">Train. Hydrate. Repeat. The daily routine you&apos;ll actually keep.</p>
 
-        <NeonCard glow="purple" className="mb-8 text-left">
-          <ul className="space-y-2 text-sm text-white">
-            <li>💪 A daily split built around your fitness level</li>
-            <li>💧 Water &amp; habit tracking with streaks</li>
-            <li>🏆 Compete on a global weekly &amp; all-time leaderboard</li>
-            <li>📈 Neon-clean progress charts</li>
-          </ul>
-        </NeonCard>
+        <div className="mt-10 flex flex-col gap-4 text-left">
+          {FEATURES.map(({ Icon, text }) => (
+            <div key={text} className="flex items-center gap-3.5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface">
+                <Icon size={18} className="text-white" />
+              </span>
+              <span className="text-sm text-white/90">{text}</span>
+            </div>
+          ))}
+        </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="mt-10 flex flex-col gap-3">
           <Link href="/signup">
-            <GlowButton className="w-full" size="lg">
+            <Button className="w-full" size="lg">
               Get Started
-            </GlowButton>
+            </Button>
           </Link>
           <Link href="/login">
-            <GlowButton variant="secondary" className="w-full" size="lg">
+            <Button variant="secondary" className="w-full" size="lg">
               Log In
-            </GlowButton>
+            </Button>
           </Link>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export function WorkoutsPerWeekChart({ data }: { data: { week: string; count: number }[] }) {
   const chartData = data.map((d) => ({
@@ -9,25 +9,44 @@ export function WorkoutsPerWeekChart({ data }: { data: { week: string; count: nu
   }));
 
   if (chartData.length === 0) {
-    return <p className="py-8 text-center text-sm text-pulse-muted">No workouts finished yet.</p>;
+    return <p className="py-8 text-center text-sm text-muted">Finish your first workout to see this chart.</p>;
   }
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={chartData}>
-        <defs>
-          <linearGradient id="workoutsGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ec4899" />
-            <stop offset="100%" stopColor="#a855f7" />
-          </linearGradient>
-        </defs>
-        <XAxis dataKey="label" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
-        <YAxis allowDecimals={false} stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} width={24} />
-        <Tooltip
-          contentStyle={{ background: "#16141f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
-          labelStyle={{ color: "#fff" }}
+    <ResponsiveContainer width="100%" height={180}>
+      <BarChart data={chartData} barCategoryGap="35%">
+        <XAxis
+          dataKey="label"
+          stroke="transparent"
+          tick={{ fill: "#9a9a9a", fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
         />
-        <Bar dataKey="count" fill="url(#workoutsGradient)" radius={[6, 6, 0, 0]} />
+        <YAxis
+          allowDecimals={false}
+          stroke="transparent"
+          tick={{ fill: "#5c5c5c", fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+          width={20}
+        />
+        <Tooltip
+          cursor={{ fill: "rgba(255,255,255,0.05)" }}
+          contentStyle={{
+            background: "#1e1e1e",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 12,
+            fontSize: 12,
+          }}
+          labelStyle={{ color: "#f5f5f5", fontWeight: 600 }}
+          itemStyle={{ color: "#9a9a9a" }}
+          formatter={(value) => [`${value} workout${value === 1 ? "" : "s"}`, null]}
+        />
+        <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={28}>
+          {chartData.map((_, i) => (
+            <Cell key={i} fill="#ffffff" />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );

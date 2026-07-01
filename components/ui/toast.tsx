@@ -19,12 +19,18 @@ export function Toast({
     <div className="fixed inset-x-0 top-4 z-50 flex justify-center px-4 animate-fade-in-up">
       <div
         className={cn(
-          "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-glow-pink backdrop-blur-md",
-          variant === "error" ? "bg-red-500/90" : "bg-gradient-to-r from-pulse-pink to-pulse-purple"
+          "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium shadow-xl shadow-black/50 backdrop-blur-md",
+          variant === "error"
+            ? "border border-red-500/30 bg-surface-2 text-red-300"
+            : "bg-white text-black"
         )}
       >
         <span>{message}</span>
-        <button onClick={onDismiss} className="text-white/80 hover:text-white" aria-label="Dismiss">
+        <button
+          onClick={onDismiss}
+          className={variant === "error" ? "text-red-300/70 hover:text-red-300" : "text-black/50 hover:text-black"}
+          aria-label="Dismiss"
+        >
           ✕
         </button>
       </div>

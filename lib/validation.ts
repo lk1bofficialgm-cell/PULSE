@@ -21,7 +21,10 @@ export const profileUpdateSchema = z.object({
   name: z.string().min(1).max(60).optional(),
   fitnessLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
   weightGoalKg: z.number().positive().max(500).nullable().optional(),
-  avatarUrl: z.string().min(1).max(500).optional(),
+  // Preset path or a compressed data URL (client resizes before upload)
+  avatarUrl: z.string().min(1).max(400_000).optional(),
+  bottleMl: z.number().int().min(100).max(4000).optional(),
+  waterGoalMl: z.number().int().min(500).max(8000).optional(),
 });
 
 export const swapExerciseSchema = z.object({
@@ -36,4 +39,22 @@ export const habitsSchema = z.object({
   stretch: z.boolean().optional(),
   sleep8h: z.boolean().optional(),
   proteinGoal: z.boolean().optional(),
+});
+
+export const waterSchema = z.object({
+  totalMl: z.number().int().min(0).max(12_000),
+});
+
+export const dayTypeSchema = z.enum(["PUSH", "PULL", "LEGS", "UPPER", "LOWER", "FULL_BODY", "REST"]);
+
+export const schedulePatchSchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  dayType: dayTypeSchema,
+});
+
+export const onboardingSchema = z.object({
+  fitnessLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]),
+  trainingDays: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+  bottleMl: z.number().int().min(100).max(4000),
+  waterGoalMl: z.number().int().min(500).max(8000),
 });
