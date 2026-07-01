@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b0b12;
+  --foreground: #f3f2f8;
+
+  --color-pulse-bg: #0b0b12;
+  --color-pulse-surface: #16141f;
+  --color-pulse-surface-2: #1e1b2a;
+  --color-pulse-pink: #ec4899;
+  --color-pulse-pink-light: #f472b6;
+  --color-pulse-purple: #a855f7;
+  --color-pulse-purple-light: #c084fc;
+  --color-pulse-muted: #9ca3af;
+
+  --shadow-glow-pink: 0 0 16px rgba(236, 72, 153, 0.55), 0 0 40px rgba(236, 72, 153, 0.25);
+  --shadow-glow-purple: 0 0 16px rgba(168, 85, 247, 0.55), 0 0 40px rgba(168, 85, 247, 0.25);
+  --shadow-glow-soft: 0 0 24px rgba(236, 72, 153, 0.18), 0 0 24px rgba(168, 85, 247, 0.18);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-pulse-bg: var(--color-pulse-bg);
+  --color-pulse-surface: var(--color-pulse-surface);
+  --color-pulse-surface-2: var(--color-pulse-surface-2);
+  --color-pulse-pink: var(--color-pulse-pink);
+  --color-pulse-pink-light: var(--color-pulse-pink-light);
+  --color-pulse-purple: var(--color-pulse-purple);
+  --color-pulse-purple-light: var(--color-pulse-purple-light);
+  --color-pulse-muted: var(--color-pulse-muted);
+  --shadow-glow-pink: var(--shadow-glow-pink);
+  --shadow-glow-purple: var(--shadow-glow-purple);
+  --shadow-glow-soft: var(--shadow-glow-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(168, 85, 247, 0.18), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(236, 72, 153, 0.12), transparent), var(--background);
+  color: var(--foreground);
+  min-height: 100dvh;
+}
+
+@keyframes pulse-tap {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes pulse-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pulse-tap {
+  animation: pulse-tap 200ms ease-in-out;
+}
+
+.animate-glow-burst {
+  animation: pulse-glow-burst 900ms ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: pulse-fade-in-up 300ms ease-out both;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--color-pulse-pink), var(--color-pulse-purple));
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
